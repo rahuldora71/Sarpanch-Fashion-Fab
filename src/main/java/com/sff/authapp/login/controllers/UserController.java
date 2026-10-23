@@ -5,66 +5,56 @@ import com.sff.authapp.login.services.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @AllArgsConstructor
 public class UserController {
 
-
     private final UserService userService;
 
     @PostMapping
+    @PreAuthorize("@perm.can('users', 'CREATE') or @perm.isAdmin()")
     public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userDto));
     }
 
-    //    get All User Api
     @GetMapping
+    @PreAuthorize("@perm.can('users', 'VIEW') or @perm.isAdmin()")
     public ResponseEntity<Iterable<UserDto>> getAllUser() {
-
-        System.out.println("Controller Hit");
-
         Iterable<UserDto> users = userService.getAllUsers();
-
-//        System.out.println(users);
-
-//        Also set the contnent type while returning
-
         return ResponseEntity.status(HttpStatus.OK).body(users);
     }
+
     @GetMapping("/test")
     public String test() {
-        System.out.println("TEST ENDPOINT HIT");
         return "Working";
     }
-    //    get user by email
+
     @GetMapping("/email/{email}")
+    @PreAuthorize("@perm.can('users', 'VIEW') or @perm.isAdmin()")
     public ResponseEntity<UserDto> getUserByEmail(@PathVariable("email") String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
-    //delete User
     @DeleteMapping("/{userId}")
+    @PreAuthorize("@perm.can('users', 'DELETE') or @perm.isAdmin()")
     public ResponseEntity<Void> deleteUser(@PathVariable("userId") Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
-//    update user
     @PutMapping("/{userId}")
+    @PreAuthorize("@perm.can('users', 'EDIT') or @perm.isAdmin()")
     public ResponseEntity<UserDto> updateUser(@RequestBody UserDto userDto, @PathVariable Long userId) {
-         return ResponseEntity.ok(userService.updateUser(userDto,userId));
+        return ResponseEntity.ok(userService.updateUser(userDto, userId));
     }
 
-//     get user by id
     @GetMapping("/{userId}")
+    @PreAuthorize("@perm.can('users', 'VIEW') or @perm.isAdmin() or @perm.isCurrentUser(#userId)")
     public ResponseEntity<UserDto> getUserById(@PathVariable("userId") Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
-
-
 }

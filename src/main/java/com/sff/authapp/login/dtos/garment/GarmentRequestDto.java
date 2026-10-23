@@ -3,6 +3,7 @@ package com.sff.authapp.login.dtos.garment;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record GarmentRequestDto(
@@ -30,7 +31,7 @@ public record GarmentRequestDto(
                 message = "Note cannot exceed 5000 characters"
         )
         String note,
-
+        BigDecimal price,
         @Size(
                 max = 5000,
                 message = "Alteration note cannot exceed 5000 characters"

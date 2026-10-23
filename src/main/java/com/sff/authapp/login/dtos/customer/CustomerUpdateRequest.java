@@ -43,6 +43,24 @@ public record CustomerUpdateRequest(
         )
         String city,
 
-        String notes
+        String notes,
+
+        @Size(max = 500, message = "Image URL cannot exceed 500 characters")
+        String image,
+
+        @Size(max = 255, message = "Image Public ID cannot exceed 255 characters")
+        String imagePublicId
 ) {
+
+    public CustomerUpdateRequest(
+            String name,
+            String phone,
+            String alternatePhone,
+            String email,
+            String address,
+            String city,
+            String notes
+    ) {
+        this(name, phone, alternatePhone, email, address, city, notes, null, null);
+    }
 }

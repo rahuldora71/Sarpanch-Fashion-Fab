@@ -1,11 +1,15 @@
-package com.sff.authapp.login.dtos.measurement;
+package com.sff.authapp.login.dtos.customer;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
-public record MeasurementSummaryResponse(
+public record CustomerProfileMeasurement(
 
         Long measurementId,
+
+        Long garmentId,
+
+        Long orderId,
 
         Long serviceId,
 
@@ -14,5 +18,6 @@ public record MeasurementSummaryResponse(
         Map<String, Object> measurementFields,
 
         LocalDateTime measuredAt
+
 ) {
 }

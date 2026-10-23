@@ -66,8 +66,13 @@ public class GarmentServiceImpl implements GarmentService {
                 .order(order)
                 .service(service)
 
-                // Historical snapshot
-                .price(service.getPrice())
+                // Use custom price if provided,
+                // otherwise use the current service price.
+                .price(
+                        request.price() != null
+                                ? request.price()
+                                : service.getPrice()
+                )
 
                 .sampleNumber(request.sampleNumber())
 

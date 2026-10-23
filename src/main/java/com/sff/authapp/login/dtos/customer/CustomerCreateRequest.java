@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record CustomerCreateRequest(
 
         @NotBlank(message = "Customer name is required")
@@ -46,6 +48,26 @@ public record CustomerCreateRequest(
         )
         String city,
 
-        String notes
+        String notes,
+
+        @Size(max = 500, message = "Image URL cannot exceed 500 characters")
+        String image,
+
+        @Size(max = 255, message = "Image Public ID cannot exceed 255 characters")
+        String imagePublicId,
+
+        List<UserImageCreateRequest> images
 ) {
+
+    public CustomerCreateRequest(
+            String name,
+            String phone,
+            String alternatePhone,
+            String email,
+            String address,
+            String city,
+            String notes
+    ) {
+        this(name, phone, alternatePhone, email, address, city, notes, null, null, null);
+    }
 }

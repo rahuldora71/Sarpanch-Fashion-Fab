@@ -17,6 +17,28 @@ class AuthAppApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private com.sff.authapp.login.services.PaymentService paymentService;
+
+    @Test
+    void testGetPaymentAnalytics() {
+        var analytics = paymentService.getPaymentAnalytics(java.time.LocalDate.now(), java.time.LocalDate.now());
+        System.out.println("ANALYTICS RESULT: " + analytics);
+    }
+
+    @Test
+    @org.springframework.security.test.context.support.WithMockUser(roles = "OWNER")
+    void testGetPaymentAnalyticsEndpoint() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/payments/analytics")
+                        .param("startDate", "2026-10-07")
+                        .param("endDate", "2026-10-07"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.todayTotal").exists())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.todayTotalAmount").exists())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.methodBreakdown").exists())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.deliveredUnpaidCount").exists());
+    }
+
     @Test
     void contextLoads() {
     }

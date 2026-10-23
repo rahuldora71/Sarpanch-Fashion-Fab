@@ -6,7 +6,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -20,11 +22,6 @@ import java.util.Map;
         indexes = {
 
                 @Index(
-                        name = "idx_measurement_garment",
-                        columnList = "garment_id"
-                ),
-
-                @Index(
                         name = "idx_measurement_service",
                         columnList = "service_id"
                 ),
@@ -32,6 +29,11 @@ import java.util.Map;
                 @Index(
                         name = "idx_measurement_user",
                         columnList = "user_id"
+                ),
+
+                @Index(
+                        name = "idx_measurement_taken_by",
+                        columnList = "taken_by_user_id"
                 )
         }
 )
@@ -48,24 +50,22 @@ public class GarmentMeasurement {
 
 
     // ============================================================
-    // GARMENT
-    // ============================================================
-
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "garment_id",
-            nullable = false,
-            unique = true
-    )
-    private Garment garment;
-
-
-    // ============================================================
     // SERVICE
     // ============================================================
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id")
+    /**
+     * Tailoring service for which this measurement was taken.
+     *
+     * Example:
+     *
+     * Measurement 25 -> Shirt
+     * Measurement 30 -> Pant
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "service_id",
+            nullable = false
+    )
     private TailoringService service;
 
 
@@ -73,8 +73,14 @@ public class GarmentMeasurement {
     // TAKEN BY
     // ============================================================
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "taken_by")
+    /**
+     * User/staff member who took the measurement.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "taken_by_user_id",
+            nullable = false
+    )
     private User takenBy;
 
 
@@ -82,8 +88,17 @@ public class GarmentMeasurement {
     // CUSTOMER
     // ============================================================
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    /**
+     * Customer whose measurement this is.
+     *
+     * A measurement can be reused by multiple garments
+     * belonging to this customer.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "user_id",
+            nullable = false
+    )
     private User user;
 
 
@@ -92,7 +107,7 @@ public class GarmentMeasurement {
     // ============================================================
 
     /**
-     * Actual measurement snapshot for this garment.
+     * Actual measurement snapshot.
      *
      * Values are keyed by Field ID.
      *
@@ -103,6 +118,12 @@ public class GarmentMeasurement {
      *     "2": 17,
      *     "3": 24.5
      * }
+     *
+     * This record should be treated as a snapshot.
+     *
+     * If the customer's measurements change later,
+     * create a new GarmentMeasurement instead of modifying
+     * an old measurement used by previous orders.
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(
@@ -145,7 +166,9 @@ public class GarmentMeasurement {
     // NOTES
     // ============================================================
 
-    @Column(columnDefinition = "TEXT")
+    @Column(
+            columnDefinition = "TEXT"
+    )
     private String note;
 
 
@@ -160,6 +183,12 @@ public class GarmentMeasurement {
     // STATE
     // ============================================================
 
+    /**
+     * Whether this measurement can currently be edited.
+     *
+     * Existing orders that reference this measurement
+     * should normally use the snapshot without modification.
+     */
     @Column(
             nullable = false
     )
@@ -193,7 +222,8 @@ public class GarmentMeasurement {
     @PrePersist
     protected void onCreate() {
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now =
+                LocalDateTime.now();
 
         if (createdAt == null) {
             createdAt = now;
@@ -205,6 +235,8 @@ public class GarmentMeasurement {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+
+        updatedAt =
+                LocalDateTime.now();
     }
 }

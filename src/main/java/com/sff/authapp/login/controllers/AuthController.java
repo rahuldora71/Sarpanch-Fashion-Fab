@@ -57,6 +57,7 @@ public class AuthController {
             HttpServletResponse response
     ) {
 
+//        System.out.println("Login request received for email: " + loginRequest.email());
         // 1. Authenticate user
         Authentication authentication = authenticate(loginRequest);
 

@@ -1,5 +1,8 @@
 package com.sff.authapp.login.dtos.customer;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 public record CustomerSummaryResponse(
 
         Long id,
@@ -12,7 +15,16 @@ public record CustomerSummaryResponse(
 
         String email,
 
-        String image
+
+        String image,
+        long totalOrders,
+
+        BigDecimal totalSpent,
+
+        BigDecimal balance,
+
+        LocalDate lastOrderDate
+
 
 
 ) {

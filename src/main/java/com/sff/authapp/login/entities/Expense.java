@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "idx_expense_date",
                         columnList = "expense_date"
+                ),
+                @Index(
+                        name = "idx_expense_recurring",
+                        columnList = "is_recurring"
                 )
         }
 )
@@ -31,15 +35,13 @@ public class Expense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @Column(
             name = "expense_number",
             nullable = false,
             unique = true,
-            length = 30
+            length = 50
     )
     private String expenseNumber;
-
 
     @Column(
             nullable = false,
@@ -47,13 +49,11 @@ public class Expense {
     )
     private String category;
 
-
     @Column(
             nullable = false,
             length = 500
     )
     private String description;
-
 
     @Column(
             nullable = false,
@@ -62,13 +62,77 @@ public class Expense {
     )
     private BigDecimal amount;
 
-
     @Column(
             name = "expense_date",
             nullable = false
     )
     private LocalDateTime expenseDate;
 
+    /**
+     * Flag indicating if this expense occurs every month/periodically.
+     */
+    @Column(
+            name = "is_recurring",
+            nullable = false
+    )
+    @Builder.Default
+    private boolean isRecurring = false;
+
+    /**
+     * Frequency of recurring expense (e.g. MONTHLY, QUARTERLY, YEARLY, WEEKLY).
+     */
+    @Column(
+            name = "recurring_frequency",
+            length = 30
+    )
+    @Builder.Default
+    private String recurringFrequency = "MONTHLY";
+
+    /**
+     * Day of month on which recurring expense is due (1-31).
+     */
+    @Column(name = "recurring_day_of_month")
+    private Integer recurringDayOfMonth;
+
+    /**
+     * Payment method (e.g. CASH, UPI, BANK_TRANSFER, CARD, CHEQUE).
+     */
+    @Column(
+            name = "payment_method",
+            length = 50
+    )
+    @Builder.Default
+    private String paymentMethod = "CASH";
+
+    /**
+     * Beneficiary / Landlord / Vendor name paid to.
+     */
+    @Column(
+            name = "paid_to",
+            length = 200
+    )
+    private String paidTo;
+
+    /**
+     * Optional receipt/invoice attachment URL (via Cloudinary).
+     */
+    @Column(
+            name = "receipt_url",
+            length = 1000
+    )
+    private String receiptUrl;
+
+    @Column(
+            name = "receipt_public_id",
+            length = 255
+    )
+    private String receiptPublicId;
+
+    @Column(
+            name = "notes",
+            columnDefinition = "TEXT"
+    )
+    private String notes;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -77,12 +141,36 @@ public class Expense {
     )
     private User addedBy;
 
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
+    private LocalDateTime createdAt;
+
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-
+        LocalDateTime now = LocalDateTime.now();
         if (expenseDate == null) {
-            expenseDate = LocalDateTime.now();
+            expenseDate = now;
         }
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        updatedAt = now;
+        if (isRecurring && (recurringFrequency == null || recurringFrequency.isBlank())) {
+            recurringFrequency = "MONTHLY";
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

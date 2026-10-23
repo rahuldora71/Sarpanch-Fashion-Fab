@@ -2,6 +2,7 @@ package com.sff.authapp.login.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sff.authapp.login.dtos.ApiError;
+import com.sff.authapp.login.security.AuthRateLimitingFilter;
 import com.sff.authapp.login.security.JwtAuthenticationFilter;
 import com.sff.authapp.login.security.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,10 +32,12 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuthRateLimitingFilter authRateLimitingFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final ObjectMapper objectMapper;
 
@@ -83,45 +87,86 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
 
                 .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(
-                                (request, response, ex) -> {
+                        exception
+                                .authenticationEntryPoint(
+                                        (request, response, ex) -> {
 
-                                    response.setStatus(
-                                            HttpStatus.UNAUTHORIZED.value()
-                                    );
+                                                response.setStatus(
+                                                        HttpStatus.UNAUTHORIZED.value()
+                                                );
 
-                                    response.setContentType(
-                                            "application/json"
-                                    );
+                                                response.setContentType(
+                                                        "application/json"
+                                                );
 
-                                    String message =
-                                            "Unauthorized access";
+                                                String message =
+                                                        "Unauthorized access";
 
-                                    String error =
-                                            (String) request.getAttribute(
-                                                    "error"
-                                            );
+                                                String error =
+                                                        (String) request.getAttribute(
+                                                                "error"
+                                                        );
 
-                                    if (error != null) {
-                                        message = error;
-                                    }
+                                                if (error != null) {
+                                                    message = error;
+                                                }
 
-                                    ApiError apiError =
-                                            ApiError.of(
-                                                    HttpStatus.UNAUTHORIZED.value(),
-                                                    "Unauthorized",
-                                                    message,
-                                                    request.getRequestURI(),
-                                                    false
-                                            );
+                                                ApiError apiError =
+                                                        ApiError.of(
+                                                                HttpStatus.UNAUTHORIZED.value(),
+                                                                "Unauthorized",
+                                                                message,
+                                                                request.getRequestURI(),
+                                                                false
+                                                        );
 
-                                    response.getWriter().write(
-                                            objectMapper.writeValueAsString(
-                                                    apiError
-                                            )
-                                    );
-                                }
-                        )
+                                                response.getWriter().write(
+                                                        objectMapper.writeValueAsString(
+                                                                apiError
+                                                        )
+                                                );
+                                        }
+                                )
+                                .accessDeniedHandler(
+                                        (request, response, ex) -> {
+
+                                                response.setStatus(
+                                                        HttpStatus.FORBIDDEN.value()
+                                                );
+
+                                                response.setContentType(
+                                                        "application/json"
+                                                );
+
+                                                ApiError apiError =
+                                                        ApiError.of(
+                                                                HttpStatus.FORBIDDEN.value(),
+                                                                "Forbidden",
+                                                                "Access Denied: You do not have sufficient permissions to perform this action.",
+                                                                request.getRequestURI(),
+                                                                false
+                                                        );
+
+                                                response.getWriter().write(
+                                                        objectMapper.writeValueAsString(
+                                                                apiError
+                                                        )
+                                                );
+                                        }
+                                )
+                )
+
+                // Security headers
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(Customizer.withDefaults())
+                        .xssProtection(Customizer.withDefaults())
+                )
+
+                // Rate limiting filter before JWT
+                .addFilterBefore(
+                        authRateLimitingFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 )
 
                 // JWT filter
@@ -168,7 +213,8 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        configuration.setAllowedOrigins(origins);
+        // Allow localhost and any local network device on same Wi-Fi with credentials
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
         configuration.setAllowedMethods(
                 List.of(

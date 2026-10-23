@@ -19,6 +19,9 @@ public record GarmentMeasurementRequestDto(
 
         String alterationNote,
 
-        Boolean editable
+
+        Boolean editable,
+        @NotNull(message = "User ID is required")
+        Long takenByUserId
 ) {
 }

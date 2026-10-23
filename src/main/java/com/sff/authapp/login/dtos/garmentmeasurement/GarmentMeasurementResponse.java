@@ -13,6 +13,10 @@ public record GarmentMeasurementResponse(
 
         Long customerId,
 
+        String customerName,
+
+        String customerPhone,
+
         Long serviceId,
 
         String serviceName,

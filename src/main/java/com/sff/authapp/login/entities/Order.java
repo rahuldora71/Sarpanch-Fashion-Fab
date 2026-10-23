@@ -3,10 +3,12 @@ package com.sff.authapp.login.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -24,6 +26,15 @@ import java.util.List;
                 @Index(
                         name = "idx_order_date",
                         columnList = "order_date"
+                ),
+                @Index(
+                        name = "idx_order_number",
+                        columnList = "order_number"
+                ),
+                @Index(
+                        name = "idx_order_tracking_token",
+                        columnList = "tracking_token",
+                        unique = true
                 )
         }
 )
@@ -61,12 +72,31 @@ public class Order {
     )
     private LocalDate orderDate;
 
+    @Column(name = "order_number")
+    private Long orderNumber;
+
+    @Column(name = "bill_image_url", length = 1000)
+    private String billImageUrl;
+
+    @Column(name = "bill_image_public_id", length = 255)
+    private String billImagePublicId;
+
+    @Column(name = "is_delivered")
+    @Builder.Default
+    private Boolean isDelivered = false;
 
     @Column(
             name = "sample_book_page_number",
             length = 50
     )
     private String sampleBookPageNumber;
+
+    @Column(
+            name = "tracking_token",
+            length = 64,
+            unique = true
+    )
+    private String trackingToken;
 
 
     // ============================================================
@@ -97,6 +127,8 @@ public class Order {
     )
     private List<AdditionalCharge> additionalCharges;
 
+
+    BigDecimal discount;
     // ============================================================
     // AUDIT
     // ============================================================
@@ -116,6 +148,7 @@ public class Order {
     private LocalDateTime updatedAt;
 
 
+
     // ============================================================
     // JPA LIFECYCLE
     // ============================================================
@@ -129,6 +162,10 @@ public class Order {
             createdAt = now;
         }
 
+        if (trackingToken == null || trackingToken.isBlank()) {
+            trackingToken = "sff_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        }
+
         updatedAt = now;
     }
 
@@ -136,6 +173,17 @@ public class Order {
     @PreUpdate
     protected void onUpdate() {
 
+        if (trackingToken == null || trackingToken.isBlank()) {
+            trackingToken = "sff_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        }
+
         updatedAt = LocalDateTime.now();
+    }
+
+    public String getEffectiveTrackingToken() {
+        if (trackingToken == null || trackingToken.isBlank()) {
+            trackingToken = "sff_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        }
+        return trackingToken;
     }
 }

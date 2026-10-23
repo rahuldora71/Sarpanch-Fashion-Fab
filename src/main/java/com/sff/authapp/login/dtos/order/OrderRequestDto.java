@@ -3,6 +3,7 @@ package com.sff.authapp.login.dtos.order;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record OrderRequestDto(
@@ -17,6 +18,7 @@ public record OrderRequestDto(
                 max = 50,
                 message = "Sample book page number cannot exceed 50 characters"
         )
-        String sampleBookPageNumber
+        String sampleBookPageNumber,
+        BigDecimal discount
 ) {
 }

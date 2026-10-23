@@ -28,6 +28,9 @@ public record PaymentRequestDto(
 
         LocalDateTime paidAt,
 
-        String note
+        String note,
+
+        @NotNull(message = "User ID is required")
+        Long receivedById
 ) {
 }

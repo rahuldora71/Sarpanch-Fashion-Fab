@@ -18,6 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // AUTHENTICATION
     // ============================================================
 
+//    user by id
+    Optional<User> findUserById(Long id);
+
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
@@ -49,6 +52,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Phone is NOT unique.
      */
     List<User> findAllByPhone(String phone);
+
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            JOIN u.roles r
+            WHERE r.name = 'ROLE_CUSTOMER'
+            AND (
+                u.phone LIKE CONCAT('%', :phone, '%')
+                OR u.alternatePhone LIKE CONCAT('%', :phone, '%')
+            )
+            ORDER BY u.id DESC
+            """)
+    List<User> findCustomersByPhoneContaining(@Param("phone") String phone);
 
 
     // ============================================================
@@ -95,4 +111,31 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("roleName") String roleName,
             Pageable pageable
     );
+
+    // ============================================================
+    // WORKERS
+    // ============================================================
+
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            JOIN u.roles r
+            WHERE r.name IN ('ROLE_WORKER', 'ROLE_TAILOR', 'WORKER', 'TAILOR')
+            ORDER BY u.name ASC
+            """)
+    List<User> findAllWorkersList();
+
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            JOIN u.roles r
+            WHERE r.name IN ('ROLE_WORKER', 'ROLE_TAILOR', 'WORKER', 'TAILOR')
+            AND (
+                LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR u.phone LIKE CONCAT('%', :keyword, '%')
+                OR LOWER(COALESCE(u.workerSpecialty, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            ORDER BY u.name ASC
+            """)
+    List<User> searchWorkersList(@Param("keyword") String keyword);
 }

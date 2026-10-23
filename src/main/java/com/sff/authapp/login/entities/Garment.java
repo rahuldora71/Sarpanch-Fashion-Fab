@@ -27,6 +27,10 @@ import java.util.List;
                         columnList = "service_id"
                 ),
                 @Index(
+                        name = "idx_garment_measurement",
+                        columnList = "measurement_id"
+                ),
+                @Index(
                         name = "idx_garment_status",
                         columnList = "status"
                 )
@@ -101,11 +105,24 @@ public class Garment {
     // MEASUREMENT
     // ============================================================
 
-    @OneToOne(
-            mappedBy = "garment",
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+    /**
+     * Measurement used by this garment.
+     *
+     * Multiple garments are allowed to reference
+     * the same GarmentMeasurement.
+     *
+     * Example:
+     *
+     * Garment 101 -> Measurement 25
+     * Garment 102 -> Measurement 25
+     * Garment 103 -> Measurement 30
+     *
+     * This allows "Copy Latest Measurement" without
+     * creating duplicate measurement records.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "measurement_id"
     )
     private GarmentMeasurement garmentMeasurement;
 
@@ -133,7 +150,8 @@ public class Garment {
             length = 30
     )
     @Builder.Default
-    private GarmentStatus status = GarmentStatus.FABRIC_CUT;
+    private GarmentStatus status =
+            GarmentStatus.FABRIC_CUT;
 
 
     // ============================================================
@@ -149,7 +167,7 @@ public class Garment {
             nullable = false
     )
     @Builder.Default
-    private boolean customerFabric = false;
+    private boolean customerFabric = true;
 
 
     // ============================================================

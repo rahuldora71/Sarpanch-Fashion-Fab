@@ -71,6 +71,27 @@ public class User implements UserDetails {
     @Column(length = 500)
     private String image;
 
+    @Column(name = "image_public_id", length = 255)
+    private String imagePublicId;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<UserImage> userImages = new ArrayList<>();
+
+    /**
+     * Worker daily garment production capacity (e.g., 5.00 garments/day).
+     */
+    @Column(name = "daily_capacity", precision = 8, scale = 2)
+    @Builder.Default
+    private java.math.BigDecimal dailyCapacity = new java.math.BigDecimal("5.00");
+
+    /**
+     * Worker primary production stage / specialty (e.g., STITCHING, CUTTING, IRONING, MASTER_TAILOR).
+     */
+    @Column(name = "worker_specialty", length = 60)
+    @Builder.Default
+    private String workerSpecialty = "STITCHING";
+
     @Column(nullable = false)
     @Builder.Default
     private boolean enable = true;

@@ -1,10 +1,8 @@
 package com.sff.authapp.login.controllers;
 
-import com.sff.authapp.login.dtos.payment.AdditionalChargeRequestDto;
-import com.sff.authapp.login.dtos.payment.AdditionalChargeResponse;
-import com.sff.authapp.login.dtos.payment.PaymentRequestDto;
-import com.sff.authapp.login.dtos.payment.PaymentResponse;
-import com.sff.authapp.login.dtos.payment.PaymentSummaryResponse;
+import com.sff.authapp.login.dtos.payment.*;
+import com.sff.authapp.login.entities.PaymentMethod;
+import com.sff.authapp.login.entities.PaymentType;
 import com.sff.authapp.login.services.AdditionalChargeService;
 import com.sff.authapp.login.services.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,10 +11,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -37,6 +39,90 @@ public class PaymentController {
 
     private final AdditionalChargeService
             additionalChargeService;
+
+
+    // ============================================================
+    // GET ALL PAYMENTS (WITH FILTERS & PAGINATION)
+    // ============================================================
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    @Operation(
+            summary = "Get payment transactions",
+            description = "Returns paginated payments with optional date range, method, type, and keyword filters."
+    )
+    public ResponseEntity<Page<PaymentTransactionResponse>> getPayments(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) PaymentMethod method,
+            @RequestParam(required = false) PaymentType type,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20, sort = "paidAt") Pageable pageable
+    ) {
+        Page<PaymentTransactionResponse> page = paymentService.getPaymentTransactions(
+                startDate,
+                endDate,
+                method,
+                type,
+                keyword,
+                pageable
+        );
+//        System.out.println("Retrieved " + page.getNumberOfElements() + " payments out of " + page.getTotalElements() + " total payments.");
+
+        return ResponseEntity.ok(page);
+    }
+
+
+    // ============================================================
+    // GET PAYMENT ANALYTICS
+    // ============================================================
+
+    @GetMapping("/analytics")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    @Operation(
+            summary = "Get payment analytics",
+            description = "Returns today's collections, date range collections, and method breakdown."
+    )
+    public ResponseEntity<PaymentAnalyticsResponse> getPaymentAnalytics(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) PaymentMethod method,
+            @RequestParam(required = false) PaymentType type,
+            @RequestParam(required = false) String keyword
+    ) {
+
+        PaymentAnalyticsResponse response = paymentService.getPaymentAnalytics(
+                startDate,
+                endDate,
+                method,
+                type,
+                keyword
+        );
+        System.out.println("Payment Analytics: " + response.toString());
+        return ResponseEntity.ok(
+                response
+        );
+    }
+
+
+    // ============================================================
+    // GET DELIVERED UNPAID ORDERS
+    // ============================================================
+
+    @GetMapping("/delivered-unpaid")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    @Operation(
+            summary = "Get delivered orders with pending balance",
+            description = "Returns orders that have delivered garments but still have an outstanding balance due."
+    )
+    public ResponseEntity<Page<DeliveredUnpaidOrderResponse>> getDeliveredUnpaidOrders(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                paymentService.getDeliveredUnpaidOrders(keyword, pageable)
+        );
+    }
 
 
     // ============================================================

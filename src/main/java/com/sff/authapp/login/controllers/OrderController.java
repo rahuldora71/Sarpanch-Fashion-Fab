@@ -1,9 +1,7 @@
 package com.sff.authapp.login.controllers;
 
-import com.sff.authapp.login.dtos.order.OrderRequestDto;
-import com.sff.authapp.login.dtos.order.OrderResponse;
-import com.sff.authapp.login.entities.GarmentStatus;
-import com.sff.authapp.login.services.OrderService;
+import com.sff.authapp.login.dtos.order.*;
+import com.sff.authapp.login.entities.GarmentStatus;import com.sff.authapp.login.services.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -35,6 +33,29 @@ public class OrderController {
 
     private final OrderService orderService;
 
+
+    @PostMapping("/complete")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    public ResponseEntity<CompleteOrderResponse> createCompleteOrder(
+            @Valid @RequestBody CompleteOrderRequestDto request
+    ) {
+
+        CompleteOrderResponse response =
+                orderService.createCompleteOrder(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+    @GetMapping("/{orderId}/details")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    public ResponseEntity<OrderDetailsResponse> getOrderDetails(
+            @PathVariable Long orderId
+    ) {
+        return ResponseEntity.ok(
+                orderService.getOrderDetails(orderId)
+        );
+    }
 
     // ============================================================
     // CREATE
@@ -361,5 +382,57 @@ public class OrderController {
         orderService.deleteOrder(orderId);
 
         return ResponseEntity.noContent().build();
+    }
+
+
+    // ============================================================
+    // NEXT SAMPLE BOOK PAGE NUMBER
+    // ============================================================
+
+    @GetMapping("/sample-book/next-number")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    @Operation(
+            summary = "Get next sample book page number",
+            description = "Returns the auto-generated next sample book page number."
+    )
+    public ResponseEntity<java.util.Map<String, String>> getNextSampleBookPageNumber() {
+        String next = orderService.getNextSampleBookPageNumber();
+        return ResponseEntity.ok(java.util.Map.of("nextPageNumber", next));
+    }
+
+
+    // ============================================================
+    // EDIT ORDER (DIFFERENTIAL UPDATE)
+    // ============================================================
+
+    @PutMapping("/{orderId}/edit")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    @Operation(
+            summary = "Edit order with differential update",
+            description = "Applies differential changes to an existing order: add, update, or remove garments/charges."
+    )
+    public ResponseEntity<CompleteOrderResponse> editOrder(
+            @PathVariable Long orderId,
+            @Valid @RequestBody EditOrderRequestDto request
+    ) {
+        return ResponseEntity.ok(orderService.editOrder(orderId, request));
+    }
+
+
+    // ============================================================
+    // DELIVER ORDER / GARMENTS
+    // ============================================================
+
+    @PostMapping("/{orderId}/deliver")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'WORKER')")
+    @Operation(
+            summary = "Deliver order garments",
+            description = "Delivers selected garments or all garments in an order, optionally recording payment."
+    )
+    public ResponseEntity<OrderDeliveryResponseDto> deliverOrderGarments(
+            @PathVariable Long orderId,
+            @Valid @RequestBody OrderDeliveryRequestDto request
+    ) {
+        return ResponseEntity.ok(orderService.deliverOrderGarments(orderId, request));
     }
 }
